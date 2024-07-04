@@ -10,5 +10,5 @@ opensearch:
   opensearch_index_name: images-index
   opensearch_collection_name: fashion-image-collection
    # A list of IAM arns that access the opensearch collection
-  opensearch_arns: [] 
+  opensearch_arns: [""] 
  

@@ -6,6 +6,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import aws_cdk as cdk
+from cdk_nag import AwsSolutionsChecks
 import yaml
 from components.fashion_agent_stack import FashionAgentStack
 from yaml.loader import SafeLoader
@@ -32,7 +33,7 @@ zip_file(
 # Create the CDK app and environment
 app = cdk.App()
 env = cdk.Environment(
-    account=os.getenv("CDK_DEFAULT_ACCOUNT"), region="us-east-1"
+    account=os.getenv("CDK_DEFAULT_ACCOUNT"), region=os.getenv("CDK_DEFAULT_REGION")
 )
 
 # Create the FashionAgentStack with the loaded configuration
@@ -40,5 +41,6 @@ stack = FashionAgentStack(
     scope=app, stack_name=stack_config["stack_name"], config=stack_config, env=env
 )
 
+cdk.Aspects.of(app).add(AwsSolutionsChecks())
 # Synthesize the AWS CloudFormation template for the stack
 app.synth()

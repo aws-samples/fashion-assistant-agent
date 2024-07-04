@@ -1,3 +1,9 @@
 aws-cdk-lib 
 PyYAML
 requests_aws4auth
+cdk_nag
+boto3
+opensearch-py
+tqdm
+pillow
+streamlit
