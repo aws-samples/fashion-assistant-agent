@@ -1,0 +1,14 @@
+stack_name: "FashionAgentStack"
+schema_name: "FashionAgent_Schema.json"
+foundation_model : "anthropic.claude-3-sonnet-20240229-v1:0"
+agent_name: "FashionAgent"
+bucket_name:  "" # Defaults to fashion-agent-{account}-{region}
+embeddingSize: "1024"
+
+opensearch:
+  deploy: True
+  opensearch_index_name: images-index
+  opensearch_collection_name: fashion-image-collection
+   # A list of IAM arns that access the opensearch collection
+  opensearch_arns: [] 
+ 
