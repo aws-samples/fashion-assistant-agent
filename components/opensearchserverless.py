@@ -3,6 +3,7 @@ import json
 from aws_cdk import CfnOutput
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_opensearchserverless as opss
+from cdk_nag import NagSuppressions, NagPackSuppression
 from constructs import Construct
 
 
@@ -17,6 +18,7 @@ class OpenSearchServerlessConstruct(Construct):
         **kwargs,
     ):
         super().__init__(scope, id, **kwargs)
+        self.nag_suppressed_resources = []
 
         self.principal_roles = principal_roles
         self.config = config
@@ -129,6 +131,8 @@ class OpenSearchServerlessConstruct(Construct):
         for role in principal_roles:
             role.attach_inline_policy(aoss_access_policy)
 
+        self.nag_suppressed_resources.append(aoss_access_policy)
+
         # Max length of policy name is 32
         data_access_policy_name = f"{self.collection_name[:21]}-data-pol"
         assert len(data_access_policy_name) <= 32
@@ -159,3 +163,22 @@ class OpenSearchServerlessConstruct(Construct):
 
         self.endpoint_url = cfn_collection.attr_collection_endpoint
         self.opensearch_arn = cfn_collection.attr_arn
+        self.add_nag_suppressions()
+
+    def add_nag_suppressions(self):
+        NagSuppressions.add_resource_suppressions(
+            self.nag_suppressed_resources,
+            [
+                NagPackSuppression(
+                    id="AwsSolutions-IAM5",
+                    reason="All IAM policies defined in this "
+                    "solution"
+                    "grant only least-privilege "
+                    "permissions. Wild"
+                    "card for resources is used only for "
+                    "services"
+                    "which do not have a resource arn",
+                )
+            ],
+            apply_to_children=True,
+        )
