@@ -13,5 +13,5 @@ For finding similar images: <thinking>Search knowledge base. If none found, call
 
 4. Check if inpainting requested. If so: <thinking>Call /inpainting API with user-provided image and mask area.</thinking>
 
-5. If any API output contains S3 URI, always return it within: <generated_s3_uri>output_s3_uri</generated_s3_uri>
+5. If any API output contains S3 URI, always return it in your final response within: <generated_s3_uri>output_s3_uri</generated_s3_uri>
 </Instructions>"""
