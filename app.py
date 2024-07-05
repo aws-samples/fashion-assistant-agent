@@ -3,32 +3,18 @@
 
 import os
 from pathlib import Path
-from zipfile import ZipFile
-
 import aws_cdk as cdk
 from cdk_nag import AwsSolutionsChecks
 import yaml
-from components.fashion_agent_stack import FashionAgentStack
-from yaml.loader import SafeLoader
-
-
-def zip_file(source_file, dest_file):
-    # Zip the file and save it to the destination directory
-    with ZipFile(dest_file, "w") as zip_file:
-        zip_file.write(source_file, source_file.name)
+from components.stacks.fashion_agent_stack import FashionAgentStack
 
 
 # Load the configuration from config.yml
 with open(os.path.join(Path(__file__).parent, "config.yml"), "r") as ymlfile:
-    stack_config = yaml.load(ymlfile, Loader=SafeLoader)
+    stack_config = yaml.load(ymlfile, Loader=yaml.loader.SafeLoader)
 
 
 current_file_path = Path(__file__).resolve()
-
-zip_file(
-    source_file=current_file_path.parent / "components/lambda_function.py",
-    dest_file=current_file_path.parent / "components/lambda_function.py.zip",
-)
 
 # Create the CDK app and environment
 app = cdk.App()

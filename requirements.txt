@@ -7,3 +7,4 @@ opensearch-py
 tqdm
 pillow
 streamlit
+aws-cdk-aws-lambda-python-alpha

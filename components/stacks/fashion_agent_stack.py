@@ -10,9 +10,10 @@ from aws_cdk import aws_bedrock as bedrock
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_s3 as s3
+from aws_cdk.aws_lambda_python_alpha import PythonLayerVersion
 from cdk_nag import NagSuppressions, NagPackSuppression
-from .opensearchserverless import OpenSearchServerlessConstruct
-from .prompt import agent_instructions
+from .opensearchserverless_stack import OpenSearchServerlessConstruct
+from ..bedrock_agent.prompt import agent_instructions
 from constructs import Construct
 import os
 
@@ -60,7 +61,10 @@ class FashionAgentStack(cdk.Stack):
         )
 
         # Load the Schema
-        schema_path = current_file_path.parent / f"{config['schema_name']}"
+        schema_path = (
+            current_file_path.parent.parent / f"bedrock_agent/{config['schema_name']}"
+        )
+
         with open(schema_path, "r") as f:
             schema_content = json.load(f)
 
@@ -77,9 +81,6 @@ class FashionAgentStack(cdk.Stack):
                     actions=["s3:GetObject", "s3:PutObject"],
                     resources=[bucket.bucket_arn, f"{bucket.bucket_arn}/*"],
                 ),
-                # iam.ManagedPolicy.from_aws_managed_policy_name(
-                #    "service-role/AWSLambdaBasicExecutionRole"
-                # )
             ]
         )
 
@@ -147,6 +148,12 @@ class FashionAgentStack(cdk.Stack):
             opensearch_endpoint_url = ""
             opensearch_arn = ""
 
+        os_custom_layer = PythonLayerVersion(
+            self,
+            f'{config["agent_name"]}-Layer',
+            entry="./components/layers/opensearch_layer",
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
+        )
         # Create lambda function
         lambda_function = lambda_.Function(
             self,
@@ -155,7 +162,7 @@ class FashionAgentStack(cdk.Stack):
             runtime=lambda_.Runtime.PYTHON_3_12,
             timeout=Duration.seconds(180),
             role=self.lambda_role,
-            code=lambda_.Code.from_asset("components/lambda_function.py.zip"),
+            code=lambda_.Code.from_asset("components/lambda/agent"),
             handler="lambda_function.lambda_handler",
             environment={
                 "region_info": self.region,
@@ -175,7 +182,7 @@ class FashionAgentStack(cdk.Stack):
                     "RequestsLayer",
                     layer_version_arn=f"arn:aws:lambda:{self.region}:770693421928:layer:Klayers-p312-requests:6",
                 ),
-                self.create_dependencies_layer(config["agent_name"]),
+                os_custom_layer,
             ],
         )
 
@@ -271,27 +278,6 @@ class FashionAgentStack(cdk.Stack):
             description="Agent Alias ID",
         )
         self.add_nag_suppressions()
-
-    def create_dependencies_layer(self, agent_name) -> lambda_.LayerVersion:
-        requirements_file = "lambda_requirements.txt"
-        output_dir = ".build/app"  # a temporary directory to store the dependencies
-        os.makedirs(output_dir, exist_ok=True)
-        command = f"pip install -r {shlex.quote(requirements_file)} -t {shlex.quote(output_dir)}/python".split()
-        # download the dependencies and store them in the output_dir
-        subprocess.check_call(command)
-
-        layer_id = f"{agent_name}-lambda-libs"  # a unique id for the layer
-        layer_code = lambda_.Code.from_asset(
-            output_dir
-        )  # import the dependencies / code
-
-        my_layer = lambda_.LayerVersion(
-            self,
-            layer_id,
-            code=layer_code,
-        )
-
-        return my_layer
 
     def add_nag_suppressions(self):
         NagSuppressions.add_resource_suppressions(

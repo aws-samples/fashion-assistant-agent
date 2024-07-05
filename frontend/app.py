@@ -118,7 +118,7 @@ for index, chat in enumerate(st.session_state["chat_history"]):
 
             # Display the generated image if it exists in the chat history
             if "image" in chat:
-                col1.image(chat["image"], caption="Generated Image", width=200)
+                col1.image(chat["image"], caption="Retrieved Image", width=200)
                 buffer = io.BytesIO()
                 chat["image"].save(buffer, format="PNG")
                 col1.download_button(
@@ -174,7 +174,7 @@ if prompt := st.chat_input("Start your conversation..."):
             generated_img = download_from_s3(bucket, generated_s3_key)
 
             # Display the generated image in the chat message
-            col1.image(generated_img, caption="Generated Image", width=200)
+            col1.image(generated_img, caption="Retrieved Image", width=200)
             buffer = io.BytesIO()
             generated_img.save(buffer, format="PNG")
             col1.download_button(
