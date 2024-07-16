@@ -1,12 +1,12 @@
-import json
-from typing import List
-import boto3
-import os
-
 import base64
-import requests
+import json
+import os
 from random import randint
-from opensearchpy import OpenSearch, AWSV4SignerAuth, RequestsHttpConnection
+from typing import List
+
+import boto3
+import requests
+from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
 
 os.chdir("/tmp")
 region = os.environ["region_info"]
@@ -18,6 +18,9 @@ if host.startswith("https:"):
     host = host.removeprefix("https://")
 index_name = os.environ["index_name"]
 embeddingSize = int(os.environ["embeddingSize"])
+
+# similarity threshold - to retrieve the matching images from OpenSearch index
+RETRIEVE_THRESHOLD = 0.6
 
 
 def get_named_parameter(event, name):
@@ -168,9 +171,7 @@ def find_similar_image_in_opensearch_index(
         timeout=3000,
     )
     if (image_path != "None") or (text != "None"):
-        payload, embedding = get_titan_multimodal_embedding(
-            image_path=image_path, text=text
-        )
+        _, embedding = get_titan_multimodal_embedding(image_path=image_path, text=text)
     query = {
         "size": 5,
         "query": {"knn": {"vector_field": {"vector": embedding["embedding"], "k": k}}},
@@ -179,7 +180,8 @@ def find_similar_image_in_opensearch_index(
     response = opensearch_client.search(index=index_name, body=query)
     retrieved_images = []
     for hit in response["hits"]["hits"]:
-        if hit["_score"] > 0.3:
+        # only retrieve the image if the matching-score is more than a certain pre-defined threshold.
+        if hit["_score"] > RETRIEVE_THRESHOLD:
             image = hit["_source"]["image_b64"]
             img = base64.b64decode(image)
             retrieved_images.append(img)
@@ -225,8 +227,6 @@ def image_lookup(event, host):
             "response_code": 400,
         }
     # If the response_code is 400 - return the original input image
-    # if input_query and (input_query != "None"):
-    #    response["body"] = input_query
     if input_image and (input_image != "None"):
         response["body"] = input_image
 
@@ -313,7 +313,7 @@ def outpaint(event):
     return results
 
 
-def getImageGen(event):
+def get_image_gen(event):
     # input_image = get_named_parameter(event, 'input_image')
     input_query = get_named_parameter(event, "input_query")
     weather = get_named_parameter(event, "weather")
@@ -321,10 +321,12 @@ def getImageGen(event):
     # Read image from file and encode it as base64 string.
 
     try:
-        """s3_client.download_file(bucket_name, input_image, f'/tmp/{input_image}')
 
-        with open(f'/tmp/{input_image}', "rb") as image_file:
-            input_image = base64.b64encode(image_file.read()).decode('utf8')"""
+        # Uncomment this to get the image file from s3 instead
+        # s3_client.download_file(bucket_name, input_image, f'/tmp/{input_image}')
+
+        # with open(f'/tmp/{input_image}', "rb") as image_file:
+        #     input_image = base64.b64encode(image_file.read()).decode('utf8')
 
         if weather == "None":
             prompt = f"{input_query}"
@@ -372,7 +374,7 @@ def getImageGen(event):
     except Exception as e:
         response_code = 400
         results = {
-            "body": f"Image cannot be generated, please try again: see error{e}",
+            "body": f"Image cannot be generated, please try again: see error {e}",
             "response_code": response_code,
         }
         return results
@@ -491,7 +493,7 @@ def lambda_handler(event, context):
     api_path = event["apiPath"]
 
     if api_path == "/imageGeneration":
-        result = getImageGen(event)
+        result = get_image_gen(event)
         body = result["body"]
         response_code = result["response_code"]
 
