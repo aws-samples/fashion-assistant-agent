@@ -106,13 +106,12 @@ The `config.yml` file in the `cdk` directory contains several variables that you
 To find your IAM role ARN, you can use the AWS CLI:
 
 1. Install the AWS CLI if you haven't already done so. Follow the instructions in the [AWS CLI documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html).
-2. Run the following command to list your IAM roles:
+2. Run the following command to get your IAM role:
 
    ```
-   aws iam list-roles
+   aws sts get-caller-identity
    ```
-3. Find the role that you want to grant access to the OpenSearch collection, and note down the `RoleName` and `Arn` values.
-4. Replace the default value in the `opensearch_arns` list with your role ARN.
+3. Replace the default value in the `opensearch_arns` list with your role ARN.
 
 Granting your IAM role access to the OpenSearch collection allows you to write embeddings to OpenSearch from your application.
 
