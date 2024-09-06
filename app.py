@@ -4,7 +4,7 @@
 import os
 from pathlib import Path
 import aws_cdk as cdk
-from cdk_nag import AwsSolutionsChecks
+from cdk_nag import AwsSolutionsChecks, NagSuppressions
 import yaml
 from components.stacks.fashion_agent_stack import FashionAgentStack
 
@@ -26,6 +26,15 @@ env = cdk.Environment(
 stack = FashionAgentStack(
     scope=app, stack_name=stack_config["stack_name"], config=stack_config, env=env
 )
+
+NagSuppressions.add_stack_suppressions(
+    stack,
+    [
+        {"id": "AwsSolutions-IAM5", "reason": "Need the wildcard for CloudWatch logs so the stack can create several streams"},
+    ],
+    True,
+)
+
 
 cdk.Aspects.of(app).add(AwsSolutionsChecks())
 # Synthesize the AWS CloudFormation template for the stack

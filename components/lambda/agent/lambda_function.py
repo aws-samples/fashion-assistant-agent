@@ -3,12 +3,16 @@ import json
 import os
 from random import randint
 from typing import List
+from io import BytesIO
 
 import boto3
 import requests
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
+import logging
 
-os.chdir("/tmp")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 region = os.environ["region_info"]
 bedrock_client = boto3.client("bedrock-runtime")
 s3_client = boto3.client("s3")
@@ -43,10 +47,13 @@ def get_weather(event):
     Returns:
         dict: A dictionary containing the current weather data.
     """
+    logger.info(f"Getting weather for event: {event}")
     location_name = get_named_parameter(event, "location_name")
+    logger.info(f"Location name: {location_name}")
 
     latitude, longitude = get_location_coordinates(location_name)
     if not latitude or not longitude:
+        logger.warning(f"Could not find location coordinates for {location_name}")
         raise Exception(f"Error: Could not find location {location_name}")
 
     base_url = "https://api.open-meteo.com/v1/forecast"
@@ -67,6 +74,7 @@ def get_weather(event):
             "body": "There is no weather information for this location. Use default value.",
             "response_code": response_code,
         }
+        logger.warning(f"No weather data found for {location_name}")
         return results
 
     payload = {
@@ -116,6 +124,7 @@ def get_weather(event):
             "body": f"Temperature is {temperature} in Fahrenheit. The weather description is {weather_code_dict[weathercode]}",
             "response_code": response_code,
         }
+        logger.info(f"Weather results: {results}")
         return results
     else:
         response_code = 400
@@ -123,6 +132,7 @@ def get_weather(event):
             "body": "There is no weather information for this location. Use default value.",
             "response_code": response_code,
         }
+        logger.warning(f"No weather data found for {location_name}")
         return results
 
 
@@ -156,8 +166,10 @@ def get_location_coordinates(location_name):
 def find_similar_image_in_opensearch_index(
     image_path: str = "None", text: str = "None", k: int = 1
 ) -> List:
+    logger.info(f"Finding similar image with params: image_path={image_path}, text={text}, k={k}")
     # Create the client with SSL/TLS enabled, but hostname verification disabled.
     if host is None:
+        logger.warning("Host is None, returning None")
         return None
     credentials = boto3.session.Session().get_credentials()
     aws_auth = AWSV4SignerAuth(credentials, region, "aoss")
@@ -185,14 +197,19 @@ def find_similar_image_in_opensearch_index(
             image = hit["_source"]["image_b64"]
             img = base64.b64decode(image)
             retrieved_images.append(img)
+    
+    logger.info(f"Retrieved {len(retrieved_images)} similar images")
     return retrieved_images
 
 
 def image_lookup(event, host):
+    logger.info(f"Image lookup for event: {event}")
     input_image = get_named_parameter(event, "input_image")
     input_query = get_named_parameter(event, "input_query")
+    logger.info(f"Input image: {input_image}, Input query: {input_query}")
 
     if not host:
+        logger.warning("No database available for image lookup")
         return {
             "body": "No database available for image look_up, try other actions.",
             "response_code": 404,
@@ -204,24 +221,25 @@ def image_lookup(event, host):
         )
     else:
         # If none of the two possible inputs is provided. Return 404
+        logger.warning("No valid inputs provided for image lookup")
         return {
             "body": "No valid inputs provided. Ask user to provide and image or image description",
             "response_code": 404,
         }
     try:
         if similar_img_b64:
-            with open("/tmp/" + "image.jpg", "wb") as f:
-                f.write(similar_img_b64[0])
+            image_data = BytesIO(similar_img_b64[0])
 
             rand_suffix = randint(0, 1000000)
             file_name = f"lookup_image_{rand_suffix}.jpg"
             output_key = "OutputImages/" + file_name
             output_s3_location = "s3://" + bucket_name + "/" + output_key
-            s3_client.upload_file("/tmp/image.jpg", bucket_name, output_key)
-            return {"body": output_s3_location, "response_code": 200}
+            s3_client.upload_fileobj(image_data, bucket_name, output_key)
+            response = {"body": output_s3_location, "response_code": 200}
         else:
             response = {"body": "", "response_code": 400}
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error in image lookup: {str(e)}")
         response = {
             "body": "Something went wrong",
             "response_code": 400,
@@ -230,6 +248,7 @@ def image_lookup(event, host):
     if input_image and (input_image != "None"):
         response["body"] = input_image
 
+    logger.info(f"Image lookup response: {response}")
     return response
 
 
@@ -249,17 +268,12 @@ def inpaint(event):
                 "maskPrompt": prompt_mask,  # One of "maskImage" or "maskPrompt" is required
             },
         }
-        # response_code = 400
         result = titan_image(payload)[0]
-        # results ={"body":result,"response_code": f'mask prompt: {prompt_mask},input_image: {encoded_image},prompt_text: {prompt_text}'}
         if result:
-            local_path = "/tmp/" + input_image.split("/")[-1]
-            # result.save(local_path)
-            with open(local_path, "wb") as f:
-                f.write(result)
+            image_data = BytesIO(result)
             output_key = "OutputImages/" + input_image.split("/")[-1]
             output_s3_location = "s3://" + bucket_name + "/" + output_key
-            s3_client.upload_file(local_path, bucket_name, output_key)
+            s3_client.upload_fileobj(image_data, bucket_name, output_key)
     except Exception as e:
         response_code = 400
         results = {
@@ -292,13 +306,10 @@ def outpaint(event):
         result = titan_image(payload)[0]
 
         if result:
-            local_path = "/tmp/" + input_image.split("/")[-1]
-            # result.save(local_path)
-            with open(local_path, "wb") as f:
-                f.write(result)
+            image_data = BytesIO(result)
             output_key = "OutputImages/" + input_image.split("/")[-1]
             output_s3_location = "s3://" + bucket_name + "/" + output_key
-            s3_client.upload_file(local_path, bucket_name, output_key)
+            s3_client.upload_fileobj(image_data, bucket_name, output_key)
 
     except Exception as e:
         response_code = 400
@@ -314,20 +325,12 @@ def outpaint(event):
 
 
 def get_image_gen(event):
-    # input_image = get_named_parameter(event, 'input_image')
     input_query = get_named_parameter(event, "input_query")
     weather = get_named_parameter(event, "weather")
 
     # Read image from file and encode it as base64 string.
 
     try:
-
-        # Uncomment this to get the image file from s3 instead
-        # s3_client.download_file(bucket_name, input_image, f'/tmp/{input_image}')
-
-        # with open(f'/tmp/{input_image}', "rb") as image_file:
-        #     input_image = base64.b64encode(image_file.read()).decode('utf8')
-
         if weather == "None":
             prompt = f"{input_query}"
         else:
@@ -349,7 +352,7 @@ def get_image_gen(event):
 
         accept = "application/json"
         content_type = "application/json"
-        model_id = "amazon.titan-image-generator-v1"
+        model_id = "amazon.titan-image-generator-v2:0"
 
         response = bedrock_client.invoke_model(
             body=body, modelId=model_id, accept=accept, contentType=content_type
@@ -364,13 +367,12 @@ def get_image_gen(event):
         base64_bytes = base64_image.encode("ascii")
         image_bytes = base64.b64decode(base64_bytes)
 
-        with open("/tmp/" + "image.jpg", "wb") as f:
-            f.write(image_bytes)
+        image_data = BytesIO(image_bytes)
 
         rand_suffix = randint(0, 1000000)
         file_name = f"gen_image_{rand_suffix}.jpg"
         output_key = "OutputImages/" + file_name
-        s3_client.upload_file("/tmp/image.jpg", bucket_name, output_key)
+        s3_client.upload_fileobj(image_data, bucket_name, output_key)
     except Exception as e:
         response_code = 400
         results = {
@@ -488,36 +490,30 @@ def titan_image(
 
 
 def lambda_handler(event, context):
+    logger.info(f"Received event: {event}")
     response_code = 200
     action_group = event["actionGroup"]
     api_path = event["apiPath"]
 
+    logger.info(f"Processing action: {action_group}, API path: {api_path}")
+
     if api_path == "/imageGeneration":
         result = get_image_gen(event)
-        body = result["body"]
-        response_code = result["response_code"]
-
     elif api_path == "/weather":
         result = get_weather(event)
-        body = result["body"]
-        response_code = result["response_code"]
-
     elif api_path == "/image_lookup":
         result = image_lookup(event, host)
-        body = result["body"]
-        response_code = result["response_code"]
-
     elif api_path == "/inpaint":
         result = inpaint(event)
-        body = result["body"]
-        response_code = result["response_code"]
-
     elif api_path == "/outpaint":
         result = outpaint(event)
-        body = result["body"]
-        response_code = result["response_code"]
+    else:
+        logger.warning(f"Unknown API path: {api_path}")
+        result = {"body": "Unknown API path", "response_code": 400}
 
-    # This will collect the return content for a given path above
+    body = result["body"]
+    response_code = result["response_code"]
+
     response_body = {"application/json": {"body": str(body)}}
     action_response = {
         "messageVersion": "1.0",
@@ -529,4 +525,6 @@ def lambda_handler(event, context):
             "responseBody": response_body,
         },
     }
+
+    logger.info(f"Returning response: {action_response}")
     return action_response

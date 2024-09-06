@@ -75,6 +75,7 @@ class FashionAgentStack(cdk.Stack):
                     resources=[
                         f"arn:aws:bedrock:{self.region}::foundation-model/amazon.titan-embed-image-v1",
                         f"arn:aws:bedrock:{self.region}::foundation-model/amazon.titan-image-generator-v1",
+                        f"arn:aws:bedrock:{self.region}::foundation-model/amazon.titan-image-generator-v2:0",
                     ],
                 ),
                 iam.PolicyStatement(
@@ -155,7 +156,7 @@ class FashionAgentStack(cdk.Stack):
             compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
         )
         # Create lambda function
-        lambda_function = lambda_.Function(
+        self.lambda_function = lambda_.Function(
             self,
             "AgentLambda",
             function_name="FashionAgentLambda",
@@ -186,6 +187,28 @@ class FashionAgentStack(cdk.Stack):
             ],
         )
 
+        self.lambda_cloudwatch_access_policy = iam.Policy(
+            self,
+            f"{self.stack_name}-fashion-agent-lambda-cloudwatch-access-policy",
+            policy_name=f"{self.stack_name}-fashion-agent-lambda-cloudwatch-access-policy",
+            document=iam.PolicyDocument(
+                statements=[
+                    iam.PolicyStatement(
+                        actions=[
+                            "logs:*",
+                        ],
+                        resources=[
+                            f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/lambda/{self.lambda_function.function_name}:*",
+                        ],
+                    )
+                ]
+            ),
+        )
+
+        self.lambda_role.attach_inline_policy(
+            self.lambda_cloudwatch_access_policy
+        )
+
         bedrock_principal = iam.ServicePrincipal(
             "bedrock.amazonaws.com",
             conditions={
@@ -196,7 +219,7 @@ class FashionAgentStack(cdk.Stack):
             },
         )
 
-        lambda_function.grant_invoke(bedrock_principal)
+        self.lambda_function.grant_invoke(bedrock_principal)
 
         # Create IAM Role for the agent
         agent_role = iam.Role(
@@ -247,7 +270,7 @@ class FashionAgentStack(cdk.Stack):
                 bedrock.CfnAgent.AgentActionGroupProperty(
                     action_group_name="imagevar",
                     action_group_executor=bedrock.CfnAgent.ActionGroupExecutorProperty(
-                        lambda_=lambda_function.function_arn
+                        lambda_=self.lambda_function.function_arn
                     ),
                     api_schema=bedrock.CfnAgent.APISchemaProperty(
                         payload=json.dumps(schema_content)
