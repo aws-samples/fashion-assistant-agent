@@ -13,6 +13,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+REQUEST_TIMEOUT = 10
+
 region = os.environ["region_info"]
 bedrock_client = boto3.client("bedrock-runtime")
 s3_client = boto3.client("s3")
@@ -64,7 +66,7 @@ def get_weather(event):
         "hourly": "temperature_2m,relativehumidity_2m,windspeed_10m",
     }
 
-    response = requests.get(base_url, params=params)
+    response = requests.get(base_url, params=params, timeout=REQUEST_TIMEOUT)
 
     if response.status_code == 200:
         data = response.json()
@@ -149,7 +151,7 @@ def get_location_coordinates(location_name):
                or None if the location is not found.
     """
     url = f"https://geocoding-api.open-meteo.com/v1/search?name={location_name}"
-    response = requests.get(url)
+    response = requests.get(url, timeout=REQUEST_TIMEOUT)
     if response.status_code == 200:
         data = response.json()
         if data.get("results"):

@@ -1,6 +1,4 @@
 import json
-import subprocess
-import shlex
 from pathlib import Path
 from typing import Any, Dict
 
@@ -101,14 +99,16 @@ class FashionAgentStack(cdk.Stack):
         self.nag_suppressed_resources.append(self.lambda_role)
 
         # Add User IAM Roles and lambda IAM Roles to a list of roles that can access opensearch
-        assert config["opensearch"][
-            "opensearch_arns"
-        ], "Opensearch arns cannot be empty"
-        role_names = [x.split("/")[-1] for x in config["opensearch"]["opensearch_arns"]]
-        opensearch_access_roles = [
-            iam.Role.from_role_arn(self, f"IamUser{name}", role_arn=x)
-            for x, name in zip(config["opensearch"]["opensearch_arns"], role_names)
-        ]
+        try:
+            if not config["opensearch"]["opensearch_arns"]:
+                raise ValueError("Opensearch arns cannot be empty")
+            role_names = [x.split("/")[-1] for x in config["opensearch"]["opensearch_arns"]]
+            opensearch_access_roles = [
+                iam.Role.from_role_arn(self, f"IamUser{name}", role_arn=x)
+                for x, name in zip(config["opensearch"]["opensearch_arns"], role_names)
+            ]
+        except KeyError:
+            raise ValueError("Missing 'opensearch_arns' in config file")
         opensearch_access_roles.append(self.lambda_role)
 
         # Deploy opensearch serverless
