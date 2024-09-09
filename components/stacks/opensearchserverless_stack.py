@@ -135,7 +135,11 @@ class OpenSearchServerlessConstruct(Construct):
 
         # Max length of policy name is 32
         data_access_policy_name = f"{self.collection_name[:21]}-data-pol"
-        assert len(data_access_policy_name) <= 32
+        try:
+            if len(data_access_policy_name) > 32:
+                raise ValueError(f"data_access_policy_name '{data_access_policy_name}' exceeds 32 characters")
+        except ValueError as e:
+            raise ValueError(f"Error creating data access policy name: {str(e)}") from e
 
         opss.CfnAccessPolicy(
             self,
