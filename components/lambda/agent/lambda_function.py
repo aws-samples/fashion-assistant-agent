@@ -10,8 +10,8 @@ import requests
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
 import logging
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
+logger.setLevel("INFO")
 
 REQUEST_TIMEOUT = 10
 
@@ -26,10 +26,20 @@ index_name = os.environ["index_name"]
 embeddingSize = int(os.environ["embeddingSize"])
 
 # similarity threshold - to retrieve the matching images from OpenSearch index
-RETRIEVE_THRESHOLD = 0.6
+RETRIEVE_THRESHOLD = 0.2
 
 
 def get_named_parameter(event, name):
+    """
+    Retrieve the value of a named parameter from the event object.
+
+    Args:
+        event (dict): The event object containing parameters.
+        name (str): The name of the parameter to retrieve.
+
+    Returns:
+        The value of the named parameter or None if not found.
+    """
     try:
         return next(item for item in event["parameters"] if item["name"] == name)[
             "value"
@@ -43,11 +53,10 @@ def get_weather(event):
     Retrieves current weather data from Open-Meteo API for the given location.
 
     Args:
-        latitude (float): The latitude of the location.
-        longitude (float): The longitude of the location.
+        event (dict): The event object containing parameters including latitude and longitude.
 
     Returns:
-        dict: A dictionary containing the current weather data.
+        dict: A dictionary with 'body' containing the current weather data and 'response_code'.
     """
     logger.info(f"Getting weather for event: {event}")
     location_name = get_named_parameter(event, "location_name")
@@ -168,7 +177,20 @@ def get_location_coordinates(location_name):
 def find_similar_image_in_opensearch_index(
     image_path: str = "None", text: str = "None", k: int = 1
 ) -> List:
-    logger.info(f"Finding similar image with params: image_path={image_path}, text={text}, k={k}")
+    """
+    Find similar images in the OpenSearch index based on image path or text query.
+
+    Args:
+        image_path (str): Path to the input image in S3. Defaults to "None".
+        text (str): Text query for image search. Defaults to "None".
+        k (int): Number of similar images to retrieve. Defaults to 1.
+
+    Returns:
+        List: List of retrieved images as byte strings.
+    """
+    logger.info(
+        f"Finding similar image with params: image_path={image_path}, text={text}, k={k}"
+    )
     # Create the client with SSL/TLS enabled, but hostname verification disabled.
     if host is None:
         logger.warning("Host is None, returning None")
@@ -199,12 +221,22 @@ def find_similar_image_in_opensearch_index(
             image = hit["_source"]["image_b64"]
             img = base64.b64decode(image)
             retrieved_images.append(img)
-    
+
     logger.info(f"Retrieved {len(retrieved_images)} similar images")
     return retrieved_images
 
 
 def image_lookup(event, host):
+    """
+    Perform image lookup based on input image or query.
+
+    Args:
+        event (dict): The event object containing input parameters.
+        host (str): The host address for the opensearch instance.
+
+    Returns:
+        dict: A dictionary with 'body' (image location or error message) and 'response_code'.
+    """
     logger.info(f"Image lookup for event: {event}")
     input_image = get_named_parameter(event, "input_image")
     input_query = get_named_parameter(event, "input_query")
@@ -255,6 +287,15 @@ def image_lookup(event, host):
 
 
 def inpaint(event):
+    """
+    Perform image inpainting based on the provided event parameters.
+
+    Args:
+        event (dict): The event object containing inpainting parameters.
+
+    Returns:
+        dict: A dictionary with 'body' (output image location or error message) and 'response_code'.
+    """
     prompt_text = get_named_parameter(event, "text")
     prompt_mask = get_named_parameter(event, "mask")
     input_image = get_named_parameter(event, "image_location")
@@ -290,6 +331,15 @@ def inpaint(event):
 
 
 def outpaint(event):
+    """
+    Perform image outpainting based on the provided event parameters.
+
+    Args:
+        event (dict): The event object containing outpainting parameters.
+
+    Returns:
+        dict: A dictionary with 'body' (output image location or error message) and 'response_code'.
+    """
     prompt_text = get_named_parameter(event, "text")
     prompt_mask = get_named_parameter(event, "mask")
     input_image = get_named_parameter(event, "image_location")
@@ -327,6 +377,15 @@ def outpaint(event):
 
 
 def get_image_gen(event):
+    """
+    Generate an image based on the provided event parameters.
+
+    Args:
+        event (dict): The event object containing image generation parameters.
+
+    Returns:
+        dict: A dictionary with 'body' (generated image location or error message) and 'response_code'.
+    """
     input_query = get_named_parameter(event, "input_query")
     weather = get_named_parameter(event, "weather")
 
@@ -391,6 +450,15 @@ def get_image_gen(event):
 
 
 def load_image_from_s3(image_path: str):
+    """
+    Load an image from S3 and encode it as a base64 string.
+
+    Args:
+        image_path (str): The S3 path of the image to load.
+
+    Returns:
+        str: Base64 encoded image content or None if there's an error.
+    """
     try:
         s3 = boto3.client("s3")
         _bucket_name, object_key = image_path.replace("s3://", "").split("/", 1)
@@ -411,7 +479,16 @@ def get_titan_multimodal_embedding(
     image_path: str = "None",
     text: str = "None",
 ):
-    """This function reads the image path, and gets the embeddings by calling Titan Multimodal Embeddings model Amazon Bedrock"""
+    """
+    This function reads the image path, and gets the embeddings by calling Titan Multimodal Embeddings model Amazon Bedrock.
+
+    Args:
+        image_path (str): Path to the input image. Defaults to "None".
+        text (str): Text input for embedding. Defaults to "None".
+
+    Returns:
+        tuple: A tuple containing payload_body and vector (embeddings).
+    """
 
     embedding_config = {
         # OutputEmbeddingLength has to be one of: [256, 384, 1024],
@@ -448,8 +525,21 @@ def titan_image(
     num_image: int = 1,
     cfg: float = 10.0,
     seed: int = None,
-    modelId: str = "amazon.titan-image-generator-v1",
+    modelId: str = "amazon.titan-image-generator-v2",
 ) -> list:
+    """
+    Generate images using the Titan Image Generator model.
+
+    Args:
+        payload (dict): The input payload for image generation.
+        num_image (int): Number of images to generate. Defaults to 1.
+        cfg (float): Scale for classifier-free guidance. Defaults to 10.0.
+        seed (int): Seed for random number generation. Defaults to None.
+        modelId (str): ID of the Titan model to use. Defaults to "amazon.titan-image-generator-v2".
+
+    Returns:
+        list: List of generated images as byte strings.
+    """
     #   ImageGenerationConfig Options:
     #   - numberOfImages: Number of images to be generated
     #   - quality: Quality of generated images, can be standard or premium
@@ -484,14 +574,22 @@ def titan_image(
     image_bytes = base64.b64decode(base64_bytes)
 
     images = [
-        # Image.open(io.BytesIO(base64.b64decode(base64_image)))
-        # for base64_image in response_body.get("images")
         image_bytes
     ]
     return images
 
 
 def lambda_handler(event, context):
+    """
+    AWS Lambda function handler for bedrock agents.
+
+    Args:
+        event (dict): The event dict containing details about the request.
+        context (object): Runtime information provided by AWS Lambda.
+
+    Returns:
+        dict: A dictionary containing the action response, including 'statusCode', 'headers', and 'body'.
+    """
     logger.info(f"Received event: {event}")
     response_code = 200
     action_group = event["actionGroup"]
