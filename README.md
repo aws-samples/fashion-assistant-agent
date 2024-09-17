@@ -60,18 +60,19 @@ This project is a fashion assistant agent built with Amazon Titan models and Age
 
 ## Deployment
 
-1. Change directory into the project directory:
-2. Synthesize the CloudFormation template:
+1. Change directory into the project directory
+2. In `config.yml` add the "opensearch_arns" i.e. IAM role(s) that would be used to access the Opensearch Collection.
+3. Synthesize the CloudFormation template:
 
    ```bash
    cdk synth
    ```
-3. Deploy the CDK stack and capture outputs:
+4. Deploy the CDK stack and capture outputs:
 
    ```bash
    cdk deploy --outputs-file variables.json
    ```
-4. (Optional) Cleanup and delete resources:
+5. (Optional) Cleanup and delete resources:
    To delete the deployed resources and the CloudFormation stack, run:
 
    ```bash
