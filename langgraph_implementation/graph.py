@@ -19,6 +19,7 @@ workflow.add_node("tools", tool_node)
 # Entrypoint
 workflow.add_edge(START, "get_input_image")
 workflow.add_edge("get_input_image", "call_model")
+workflow.add_edge("tools", "call_model")
 workflow.add_conditional_edges(
     "call_model", router, {"tools": "tools", "finish": END})
 

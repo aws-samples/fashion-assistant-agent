@@ -8,3 +8,4 @@ class AgentState(TypedDict):
     input_image: bool = False
     output_s3_location: str = None
     database: str = None
+    weather: str = None

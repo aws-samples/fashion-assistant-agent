@@ -27,7 +27,6 @@ host = os.environ["aoss_host"]
 if host.startswith("https:"):
     host = host.removeprefix("https://")
 
-
 ################## Tools #############################
 
 
@@ -63,11 +62,9 @@ def get_weather(location_name: str):
     if response.status_code == 200:
         weather_data = response.json()
     else:
-        response_code = 400
-        results = {
-            "body": "There is no weather information for this location. Use default value.",
-            "response_code": response_code,
-        }
+        results = (
+            "There is no weather information for this location. Use default value."
+        )
         logger.warning(f"No weather data found for {location_name}")
         return results
 
@@ -109,7 +106,9 @@ def get_weather(location_name: str):
         logger.info(f"Weather results: {results}")
         return results
     else:
-        results = "There is no weather information for this location. Use default value."
+        results = (
+            "There is no weather information for this location. Use default value."
+        )
         logger.warning(f"No weather data found for {location_name}")
         return results
 
@@ -121,7 +120,7 @@ def get_image_gen(input_query: str, weather: str):
     Description: This action generates images based on user's query and image provided by the user, the weather parameter is only needed if a location was mentioned in the user query. If weather is needed used the /weather api to get the weather input needed. In other cases where a location is not mentioned by the user query the weather parameter is optional.
     Args:
         input_query (str): This is the part of the user query that describes the details to be included in the image
-        weather (str): This parameter is input with the weather output if the /weather api is called. If a location is not mentioned in the user query use the default value of None
+        weather (str): This parameter is input with the weather output if the weather tool has been called. If a location is not mentioned in the user query use the default value of None
     Returns:
         body (str): generated image location or error message
     """
@@ -131,7 +130,7 @@ def get_image_gen(input_query: str, weather: str):
         if weather == "None":
             prompt = f"{input_query}"
         else:
-            prompt = f"{input_query}.Make the clothing suitable for wearing in {weather} weather conditions."
+            prompt = f"{input_query}. Make the clothing suitable for wearing in {weather} weather conditions."
 
         body = json.dumps(
             {
@@ -297,7 +296,7 @@ def image_lookup(input_image: str, input_query: str):
             response = ""
     except Exception as e:
         logger.error(f"Error in image lookup: {str(e)}")
-        return "Error in image_lookup. Please take another action.",
+        return ("Error in image_lookup. Let me generate a relevant image.",)
     if input_image and (input_image != "None"):
         response = input_image
 
@@ -320,9 +319,12 @@ def human_input_tool(ai_message) -> str:
     contents = []
     while True:
         try:
-            print(input("Give your input:"))
+            line = input()
         except EOFError:
             break
+        if line == "q":
+            break
+        contents.append(line)
 
     print("\n############################################")
     return

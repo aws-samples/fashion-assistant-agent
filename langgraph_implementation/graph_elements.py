@@ -31,8 +31,7 @@ MODEL_ID_BEDROCK = "anthropic.claude-3-sonnet-20240229-v1:0"
 handler = RealTimeFileCallbackHandler("output.log")
 config = Config(read_timeout=READ_TIMEOUT_BEDROCK)
 bedrock_runtime = boto3.client(
-    "bedrock-runtime", region_name=region, config=config
-)
+    "bedrock-runtime", region_name=region, config=config)
 
 ####
 
@@ -53,14 +52,11 @@ llm = ChatBedrock(
 llm = llm.bind_tools(tools)
 
 
-class InputImage(BaseModel):
-    input_image: str = Field(
-        description="S3 url for the image input path"
-    )
-
-
 def get_input_image(state: AgentState):
     user_ques = state["messages"][-1].content
+
+    class InputImage(BaseModel):
+        input_image: str = Field(description="S3 url for the image input path")
 
     structured_llm = llm.with_structured_output(InputImage)
     model_response = structured_llm.invoke(user_ques)
@@ -77,6 +73,7 @@ def call_model(state: AgentState):
 
 
 ############## EDGES ################
+
 
 def router(state: AgentState):
     result = state["messages"][-1]

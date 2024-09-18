@@ -16,8 +16,6 @@ REQUEST_TIMEOUT = 10
 region = os.environ["region_info"]
 bedrock_client = boto3.client("bedrock-runtime")
 host = os.environ["aoss_host"]
-s3_client = boto3.client("s3")
-bucket_name = os.environ["s3_bucket"]
 index_name = os.environ["index_name"]
 if host.startswith("https:"):
     host = host.removeprefix("https://")
@@ -181,9 +179,7 @@ def titan_image(
     base64_bytes = base64_image.encode("ascii")
     image_bytes = base64.b64decode(base64_bytes)
 
-    images = [
-        image_bytes
-    ]
+    images =
     return images
 
 
