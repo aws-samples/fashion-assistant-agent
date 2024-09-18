@@ -60,14 +60,12 @@ def get_input_image(state: AgentState):
 
     structured_llm = llm.with_structured_output(InputImage)
     model_response = structured_llm.invoke(user_ques)
-    logger.info(f"Initial response - {model_response}")
     return {"input_image": model_response.input_image, "database": host}
 
 
 def call_model(state: AgentState):
     messages = state["messages"]
     response = llm.invoke(messages)
-    print(f"response:- {response}")
     # We return a list, because this will get added to the existing list
     return {"messages": [response]}
 
@@ -77,7 +75,8 @@ def call_model(state: AgentState):
 
 def router(state: AgentState):
     result = state["messages"][-1]
-    print("state:", state)
+    # tools = [tool["name"] for tool in result.tool_calls]
+    # print(f"LLM is calling the following tools for use: {tools}")
     if len(result.tool_calls) > 0:
         return "tools"
     return "finish"

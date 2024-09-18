@@ -4,10 +4,12 @@ import logging
 import os
 from random import randint
 from typing import List, Optional
-
+import io
 import boto3
+from PIL import Image
 import requests
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
+from langchain_core.messages import SystemMessage
 
 logger = logging.getLogger()
 logger.setLevel("INFO")
@@ -24,6 +26,22 @@ embeddingSize = int(os.environ["embeddingSize"])
 
 # similarity threshold - to retrieve the matching images from OpenSearch index
 RETRIEVE_THRESHOLD = 0.2
+
+
+def download_from_s3(bucket_name, key):
+    """
+    This function downloads the image from S3.
+    """
+    s3 = boto3.client("s3")
+    response = s3.get_object(Bucket=bucket_name, Key=key)
+    img_bytes = response["Body"].read()
+    img = Image.open(io.BytesIO(img_bytes))
+    return img
+
+
+def add_system_prompt(messages):
+    system_prompt = """You are a smart and quirky AI Stylist. You answer questions about clothes to wear. You have to understand the user question and give precise answer to the user. <Instructions> 1/ Try to take weather and occasion into your suggestions.  2/ If you do not find any relevant image in the database, generate an image using your tools. 3/ Try to respond the user with a relevant image. """
+    return [SystemMessage(content=system_prompt)] + messages
 
 
 def get_titan_multimodal_embedding(
@@ -179,7 +197,7 @@ def titan_image(
     base64_bytes = base64_image.encode("ascii")
     image_bytes = base64.b64decode(base64_bytes)
 
-    images =
+    images = [image_bytes]
     return images
 
 
