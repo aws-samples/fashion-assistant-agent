@@ -56,7 +56,3 @@ embeddingSize = 1024
 # OSS setup
 collection_name = "fashion-collection-new"
 index_name = "images-index-new"
-# Note: collection_id will be added by running the create_OSS_index.ipynb notebook
-
-
-# These 2 lines are imported from collection creation
