@@ -15,7 +15,7 @@ logger = logging.getLogger()
 logger.setLevel("INFO")
 
 REQUEST_TIMEOUT = 10
-region = os.environ["region_info"]
+region = os.environ["region"]
 bedrock_client = boto3.client("bedrock-runtime")
 host = os.environ["aoss_host"]
 index_name = os.environ["index_name"]

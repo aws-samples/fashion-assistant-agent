@@ -19,7 +19,7 @@ logger = logging.getLogger()
 logger.setLevel("INFO")
 
 
-region = os.environ["region_info"]
+region = os.environ["region"]
 host = os.environ["aoss_host"]
 if host.startswith("https:"):
     host = host.removeprefix("https://")
