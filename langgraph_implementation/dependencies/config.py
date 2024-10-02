@@ -54,5 +54,5 @@ idleSessionTTLInSeconds = 3600
 embeddingSize = 1024
 
 # OSS setup
-collection_name = "fashion-collection-new"
-index_name = "images-index-new"
+collection_name = "fashion-assistant-collection"
+index_name = "fashion-assistant-index"
