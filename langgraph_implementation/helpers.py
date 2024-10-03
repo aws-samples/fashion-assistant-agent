@@ -148,7 +148,7 @@ def titan_image(
     num_image: int = 1,
     cfg: float = 10.0,
     seed: Optional[int] = None,
-    model_id: str = "amazon.titan-image-generator-v2",
+    model_id: str = "amazon.titan-image-generator-v2:0",
 ) -> list:
     """
     Generate images using the Titan Image Generator model.
@@ -158,7 +158,7 @@ def titan_image(
         num_image (int): Number of images to generate. Defaults to 1.
         cfg (float): Scale for classifier-free guidance. Defaults to 10.0.
         seed (int): Seed for random number generation. Defaults to None.
-        model_id (str): ID of the Titan model to use. Defaults to "amazon.titan-image-generator-v2".
+        model_id (str): ID of the Titan model to use. Defaults to "amazon.titan-image-generator-v2:0".
 
     Returns:
         list: List of generated images as byte strings.
