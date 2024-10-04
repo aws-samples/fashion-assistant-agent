@@ -30,13 +30,8 @@ except:
 aoss_collection_id = param_dict['AOSSHost'].split('.')[0]
 
 # Delete Collection for OpenSearchServerless
-try:
-    # Delete collection
-    response = aoss_client.delete_collection(
-        id=aoss_collection_id
-    )
-    print(f"Collection '{param_dict['AOSSCollectionName']}' deleted successfully.")
-
-except Exception as e:
-    print(f"Error cleaning up resources: {e}")
+aoss_client.delete_collection(
+    id=aoss_collection_id
+)
+print(f"Collection '{param_dict['AOSSCollectionName']}' deleted successfully.")
 
