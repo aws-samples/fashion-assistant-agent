@@ -56,3 +56,7 @@ embeddingSize = 1024
 # OSS setup
 collection_name = "fashion-assistant-collection"
 index_name = "fashion-assistant-index"
+# These 2 lines are imported from collection creation
+
+aoss_collection_id = "kayp568ibhgwwvjzjbuf"
+aoss_host = "kayp568ibhgwwvjzjbuf.us-east-1.aoss.amazonaws.com"
