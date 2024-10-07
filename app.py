@@ -3,11 +3,12 @@
 
 import os
 from pathlib import Path
-import aws_cdk as cdk
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
-import yaml
-from components.stacks.fashion_agent_stack import FashionAgentStack
 
+import aws_cdk as cdk
+import yaml
+from cdk_nag import AwsSolutionsChecks, NagSuppressions
+
+from components.stacks.fashion_agent_stack import FashionAgentStack
 
 # Load the configuration from config.yml
 with open(os.path.join(Path(__file__).parent, "config.yml"), "r") as ymlfile:
@@ -30,7 +31,8 @@ stack = FashionAgentStack(
 NagSuppressions.add_stack_suppressions(
     stack,
     [
-        {"id": "AwsSolutions-IAM5", "reason": "Need the wildcard for CloudWatch logs so the stack can create several streams"},
+        {"id": "AwsSolutions-IAM5",
+            "reason": "Need the wildcard for CloudWatch logs so the stack can create several streams"},
     ],
     True,
 )
