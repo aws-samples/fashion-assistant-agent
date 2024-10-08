@@ -58,13 +58,13 @@ When workshop environment is deployed, a Amazon Opensearch Serverless collection
 To quickly search for similar styles, we need a vector database to store multi-modal embeddings of our fashion dataset. 
 You can use different tools for such task. For this workshop, we will use the serverless option: [Amazon OpenSearch Serverless (AOSS)](https://aws.amazon.com/opensearch-service/features/serverless/), so that AWS can handle the infrastructure of the vector database for us.
 
-In `[Step 1](langgraph_implementation/Step1_populate_AOSS_index.ipynb)` we will download of test data, create the multi-modal embeddings and ingest the vector representations of our data into an AOSS collection.
+In [Step 1](langgraph_implementation/Step1_populate_AOSS_index.ipynb) we will download of test data, create the multi-modal embeddings and ingest the vector representations of our data into an AOSS collection.
 
 The pre-requisite infrastructure for this lab is already created for you and we will use [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) to access them. 
 
 #### Step 2. LangGraph Agent Interaction
 
-Once our data is embedded and stored in our vector database, we will create our agent in `[Step2](langgraph_implementation/Step2_langgraph_agent.ipynb)`. We will also test and interact with this agent with your fashion requests.
+Once our data is embedded and stored in our vector database, we will create our agent in [Step2](langgraph_implementation/Step2_langgraph_agent.ipynb). We will also test and interact with this agent with your fashion requests.
 
 
 #### STEP 3. Cleanup
