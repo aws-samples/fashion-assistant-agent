@@ -22,7 +22,7 @@ This project is a fashion assistant agent built with Amazon Titan models and Lan
 
 ## Implementation
 
-Once workshop environment is created, a Amazon Opensearch Serverless collection is created.
+When workshop environment is deployed, a Amazon Opensearch Serverless collection is created to store the vector embeddings of your fashion image dataset.
 
 #### Step 1. Data Ingestion
 
