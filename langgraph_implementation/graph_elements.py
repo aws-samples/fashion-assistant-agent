@@ -3,17 +3,12 @@ import os
 
 import boto3
 from botocore.config import Config
-
-from pydantic import BaseModel, Field
-from langgraph.prebuilt import ToolNode
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain_aws import ChatBedrock
-
-
 from callback_handler import RealTimeFileCallbackHandler
+from langchain_aws import ChatBedrockConverse
+from langgraph.prebuilt import ToolNode
+from pydantic import BaseModel, Field
 from state import AgentState
 from tools import tools
-
 
 logger = logging.getLogger()
 logger.setLevel("INFO")
@@ -37,17 +32,13 @@ bedrock_runtime = boto3.client(
 
 tool_node = ToolNode(tools)
 
-llm = ChatBedrock(
+llm = ChatBedrockConverse(
     client=bedrock_runtime,
-    model_id=MODEL_ID_BEDROCK,
-    streaming=True,
-    callbacks=[StreamingStdOutCallbackHandler()],
-    model_kwargs={
-        "temperature": 0.0,
-        "stop_sequences": ["\n\nHuman"],
-        "max_tokens": 4096,
-    },
+    model=MODEL_ID_BEDROCK,
+    temperature=0,
+    max_tokens=4096,
 )
+
 
 llm = llm.bind_tools(tools)
 
@@ -56,6 +47,7 @@ def get_input_image(state: AgentState):
     user_ques = state["messages"][-1].content
 
     class InputImage(BaseModel):
+        "Only give out the S3 url for the image input path"
         input_image: str = Field(description="S3 url for the image input path")
 
     structured_llm = llm.with_structured_output(InputImage)
