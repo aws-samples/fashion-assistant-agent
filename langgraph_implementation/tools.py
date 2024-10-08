@@ -103,7 +103,7 @@ def get_weather(location_name: str):
             96: "Thunderstorm with slight hail",
             99: "Thunderstorm with heavy hail",
         }
-        results = f"Temperature is {temperature} in Fahrenheit. The weather description is {weather_code_dict[weathercode]}"
+        results = f"Temperature is {temperature} in Celsius. The weather description is {weather_code_dict[weathercode]}"
         logger.info(f"Weather results: {results}")
         return results
     else:

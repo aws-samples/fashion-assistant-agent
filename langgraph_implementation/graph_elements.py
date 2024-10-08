@@ -52,7 +52,9 @@ def get_input_image(state: AgentState):
 
     structured_llm = llm.with_structured_output(InputImage)
     model_response = structured_llm.invoke(user_ques)
-    return {"input_image": model_response.input_image, "database": host}
+    if model_response and "input_image" in vars(model_response):
+        return {"input_image": model_response.input_image, "database": host}
+    return {"input_image": "", "database": host}
 
 
 def call_model(state: AgentState):
