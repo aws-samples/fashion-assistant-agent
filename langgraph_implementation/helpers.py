@@ -1,15 +1,16 @@
 import base64
+import io
 import json
 import logging
 import os
 from random import randint
 from typing import List, Optional
-import io
+
 import boto3
-from PIL import Image
 import requests
-from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
 from langchain_core.messages import SystemMessage
+from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
+from PIL import Image
 
 logger = logging.getLogger()
 logger.setLevel("INFO")

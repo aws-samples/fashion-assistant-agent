@@ -1,7 +1,6 @@
+from graph_elements import call_model, get_input_image, router, tool_node
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
-
-from graph_elements import call_model, get_input_image, router, tool_node
 from state import AgentState
 
 ENABLE_LANGGRAPH_DEBUG_MODE = False
@@ -28,5 +27,7 @@ checkpointer = MemorySaver()
 
 # Create runnable
 graph = workflow.compile(
-    checkpointer=checkpointer, interrupt_before=None, debug=ENABLE_LANGGRAPH_DEBUG_MODE
+    checkpointer=checkpointer,
+    interrupt_before=None,
+    debug=ENABLE_LANGGRAPH_DEBUG_MODE
 )

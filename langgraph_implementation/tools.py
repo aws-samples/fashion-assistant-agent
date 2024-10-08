@@ -33,10 +33,11 @@ if host.startswith("https:"):
 @tool
 def get_weather(location_name: str):
     """
-    Finds weather at a given location.It retrieves current weather data for a particular geographical location.
+    Finds weather at a given location.
+    Description: It retrieves current weather data for a particular geographical location.
 
     Args:
-        event (dict): The event object containing parameters including latitude and longitude.
+        location_name (str): Name of the Location.
 
     Returns:
         body: A string containing the current weather data.
@@ -106,9 +107,7 @@ def get_weather(location_name: str):
         logger.info(f"Weather results: {results}")
         return results
     else:
-        results = (
-            "There is no weather information for this location. Use default value."
-        )
+        results = "There is no weather information for this location. Use default value."
         logger.warning(f"No weather data found for {location_name}")
         return results
 
@@ -305,7 +304,7 @@ def image_lookup(input_image: str, input_query: str):
 
 
 @tool
-def human_input_tool(ai_message) -> str:
+def human_input_tool(ai_message: str) -> str:
     """
     Use this tool when you require human input of feedback from your actions or thoughts.
     Args:
